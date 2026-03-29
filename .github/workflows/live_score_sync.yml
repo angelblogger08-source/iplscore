@@ -2,19 +2,24 @@ name: IPL Live Score Sync
 
 on:
   schedule:
-    # Runs every 5 minutes (standard free interval)
     - cron: '*/5 * * 3-5 *'
-  workflow_dispatch: # Allows you to trigger it manually for testing
+  workflow_dispatch:
+
+env:
+  # This tells GitHub to use the newer Node.js 24 engine now
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Updated to v5 (Supports Node 24)
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
+      # Updated to v6 (Supports Node 24)
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 

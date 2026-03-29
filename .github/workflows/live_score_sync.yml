@@ -1,0 +1,28 @@
+name: IPL Live Score Sync
+
+on:
+  schedule:
+    # Runs every 5 minutes (standard free interval)
+    - cron: '*/5 * * 3-5 *'
+  workflow_dispatch: # Allows you to trigger it manually for testing
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 gspread oauth2client
+
+      - name: Run Scraper
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: python scraper.py

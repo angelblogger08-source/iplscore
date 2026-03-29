@@ -44,12 +44,23 @@ def scrape_ipl_score():
         # 3. Update Google Sheet (Row 2: Score, Overs, Target, Status)
         # Column A=Score, B=Overs, C=Target, D=Status
         print(f"DEBUG: Scraped Score is {score}, Overs are {overs}")
-        sheet.update(range_name='A2:D2', values=[[score, overs, "221", status]])
-        
-        print(f"Update Successful: {score} at {overs}")
+        # Use this updated logic in your scraper.py
+try:
+    # 1. Prepare the data as a list of lists
+    data_to_save = [[score, overs, "221", status]]
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    # 2. Update with explicit parameters (this fixes the silent 200 issue)
+    sheet.update(
+        values=data_to_save, 
+        range_name='A2:D2', 
+        value_input_option='USER_ENTERED'
+    )
+    
+    print(f"✅ Success! Updated sheet with: {score}")
+
+except Exception as e:
+    # This will now tell us the REAL error if one exists
+    print(f"❌ Actual Error: {e}")
 
 if __name__ == "__main__":
     scrape_ipl_score()

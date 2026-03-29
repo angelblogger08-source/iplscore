@@ -20,7 +20,7 @@ def scrape_ipl_score():
         client = gspread.authorize(creds)
         
         # Ensure your Google Sheet is named exactly "IPL_Live_Scores"
-        sheet = client.open("IPL_Live_Scores").sheet1
+        sheet = client.open("1c1WtoomLI5CIkitzwjeoKZGOLQog6wL8FwDUcYnxa_s").sheet1
 
         # 2. Scrape the Score (Targeting NDTV Sports MI vs KKR Live Page)
         url = "https://sports.ndtv.com/ipl-2026/mumbai-indians-vs-kolkata-knight-riders-live-score-ipl-2026-mi-vs-kkr-live-cricket-updates-11282248"

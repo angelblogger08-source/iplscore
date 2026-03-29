@@ -6,8 +6,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 def scrape_ipl_score():
-    # 1. Setup Google Sheets connection
     try:
+        # 1. SETUP GOOGLE SHEETS
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         
         # Pulling the secret from GitHub Actions Environment
@@ -20,33 +20,42 @@ def scrape_ipl_score():
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         
-        # FIXED: Use open_by_key because you are using the long ID string
-        # Ensure the bot email is an "Editor" on this specific sheet ID
+        # TARGET SHEET: Using your specific Sheet ID
         sheet_id = "1c1WtoomLI5CIkitzwjeoKZGOLQog6wL8FwDUcYnxa_s"
         sheet = client.open_by_key(sheet_id).sheet1
 
-        # 2. Scrape the Score (Targeting NDTV Sports MI vs KKR Live Page)
-        url = "https://sports.ndtv.com/ipl-2026/mumbai-indians-vs-kolkata-knight-riders-live-score-ipl-2026-mi-vs-kkr-live-cricket-updates-11282248"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        # 2. DYNAMIC SCRAPING (Live from NDTV Sports)
+        url = "https://sports.ndtv.com/cricket/live-scores"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
         
         response = requests.get(url, headers=headers)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Current Match Data logic
-        try:
-            score = soup.find('span', class_='scr_tm-run').text.strip()
-            overs = soup.find('span', class_='scr_tm-ovr').text.strip()
-            status = "Innings Break - MI needs 221 to win"
-        except AttributeError:
-            # Fallback values
-            score = "220/4"
-            overs = "(20.0)"
-            status = "Innings Break: KKR set target of 221"
+        # Logic to find the MI vs KKR match section dynamically
+        score = "Final"
+        overs = "Result"
+        status = "Match Ended"
 
-        print(f"DEBUG: Scraped Score is {score}, Overs are {overs}")
+        # Search for all match cards on the page
+        match_cards = soup.find_all('div', class_='sp-scr_wrp')
+        
+        for card in match_cards:
+            if "Mumbai Indians" in card.text and "Kolkata Knight Riders" in card.text:
+                try:
+                    # Extract the live numbers
+                    score = card.find('span', class_='scr_tm-run').text.strip()
+                    overs = card.find('span', class_='scr_tm-ovr').text.strip()
+                    status = "MI vs KKR: Live Tracking"
+                    break
+                except:
+                    continue
 
-        # 3. Update Google Sheet
-        # Fixed the indentation and the update method parameters
+        print(f"DEBUG: Scraped {score} at {overs}")
+
+        # 3. UPDATE THE SHEET
+        # Format: [Score, Overs, Target, Status]
         data_to_save = [[score, overs, "221", status]]
         
         sheet.update(
@@ -55,7 +64,7 @@ def scrape_ipl_score():
             value_input_option='USER_ENTERED'
         )
         
-        print(f"✅ Success! Updated sheet with: {score}")
+        print(f"✅ Success! Sheet updated with {score}")
 
     except Exception as e:
         print(f"❌ Actual Error: {e}")

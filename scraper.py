@@ -9,18 +9,21 @@ def scrape_ipl_score():
     # 1. Setup Google Sheets connection
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        
         # Pulling the secret from GitHub Actions Environment
         creds_json = os.environ.get('GOOGLE_CREDENTIALS')
         if not creds_json:
-            print("Error: GOOGLE_CREDENTIALS secret not found.")
+            print("❌ Error: GOOGLE_CREDENTIALS secret not found.")
             return
 
         creds_dict = json.loads(creds_json)
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         
-        # Ensure your Google Sheet is named exactly "IPL_Live_Scores"
-        sheet = client.open("1c1WtoomLI5CIkitzwjeoKZGOLQog6wL8FwDUcYnxa_s").sheet1
+        # FIXED: Use open_by_key because you are using the long ID string
+        # Ensure the bot email is an "Editor" on this specific sheet ID
+        sheet_id = "1c1WtoomLI5CIkitzwjeoKZGOLQog6wL8FwDUcYnxa_s"
+        sheet = client.open_by_key(sheet_id).sheet1
 
         # 2. Scrape the Score (Targeting NDTV Sports MI vs KKR Live Page)
         url = "https://sports.ndtv.com/ipl-2026/mumbai-indians-vs-kolkata-knight-riders-live-score-ipl-2026-mi-vs-kkr-live-cricket-updates-11282248"
@@ -29,38 +32,33 @@ def scrape_ipl_score():
         response = requests.get(url, headers=headers)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Current Match Data (Updated for MI vs KKR Innings Break)
-        # These selectors target the live score block on NDTV
+        # Current Match Data logic
         try:
-            score = soup.find('span', class_='scr_tm-run').text.strip() # Should be "220/4"
-            overs = soup.find('span', class_='scr_tm-ovr').text.strip() # Should be "(20.0)"
+            score = soup.find('span', class_='scr_tm-run').text.strip()
+            overs = soup.find('span', class_='scr_tm-ovr').text.strip()
             status = "Innings Break - MI needs 221 to win"
         except AttributeError:
-            # Fallback if the game hasn't resumed or layout changed
+            # Fallback values
             score = "220/4"
             overs = "(20.0)"
             status = "Innings Break: KKR set target of 221"
 
-        # 3. Update Google Sheet (Row 2: Score, Overs, Target, Status)
-        # Column A=Score, B=Overs, C=Target, D=Status
         print(f"DEBUG: Scraped Score is {score}, Overs are {overs}")
-        # Use this updated logic in your scraper.py
-try:
-    # 1. Prepare the data as a list of lists
-    data_to_save = [[score, overs, "221", status]]
 
-    # 2. Update with explicit parameters (this fixes the silent 200 issue)
-    sheet.update(
-        values=data_to_save, 
-        range_name='A2:D2', 
-        value_input_option='USER_ENTERED'
-    )
-    
-    print(f"✅ Success! Updated sheet with: {score}")
+        # 3. Update Google Sheet
+        # Fixed the indentation and the update method parameters
+        data_to_save = [[score, overs, "221", status]]
+        
+        sheet.update(
+            values=data_to_save, 
+            range_name='A2:D2', 
+            value_input_option='USER_ENTERED'
+        )
+        
+        print(f"✅ Success! Updated sheet with: {score}")
 
-except Exception as e:
-    # This will now tell us the REAL error if one exists
-    print(f"❌ Actual Error: {e}")
+    except Exception as e:
+        print(f"❌ Actual Error: {e}")
 
 if __name__ == "__main__":
     scrape_ipl_score()

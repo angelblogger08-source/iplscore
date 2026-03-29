@@ -43,7 +43,7 @@ def scrape_ipl_score():
 
         # 3. Update Google Sheet (Row 2: Score, Overs, Target, Status)
         # Column A=Score, B=Overs, C=Target, D=Status
-        sheet.update('A2:D2', [[score, overs, "221", status]])
+        sheet.update(range_name='A2:D2', values=[[score, overs, "221", status]])
         
         print(f"Update Successful: {score} at {overs}")
 
